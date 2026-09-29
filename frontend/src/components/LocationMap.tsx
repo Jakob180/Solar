@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Crosshair, LocateFixed, MapPin } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Crosshair, LoaderCircle, LocateFixed, MapPin, Search } from 'lucide-react';
 import L, { type LeafletMouseEvent, type Map as LeafletMap, type Marker } from 'leaflet';
+import { ApiError, searchLocations } from '../api';
+import type { GeocodeResult } from '../types';
 import 'leaflet/dist/leaflet.css';
 import './LocationMap.css';
 
@@ -11,6 +13,8 @@ export interface MapCoordinates {
 
 export interface LocationMapProps extends MapCoordinates {
   onChange: (latitude: number, longitude: number) => void;
+  onLocationNameChange?: (name: string) => void;
+  locationName?: string;
   className?: string;
 }
 
@@ -53,19 +57,56 @@ export function LocationMap({
   latitude,
   longitude,
   onChange,
+  onLocationNameChange,
+  locationName = '',
   className = '',
 }: LocationMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
   const onChangeRef = useRef(onChange);
+  const onLocationNameChangeRef = useRef(onLocationNameChange);
+  const searchRootRef = useRef<HTMLDivElement | null>(null);
+  const searchRequestRef = useRef(0);
   const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
+  const [searchAttribution, setSearchAttribution] = useState('© OpenStreetMap contributors (ODbL)');
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'results' | 'empty' | 'error'>('idle');
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    onLocationNameChangeRef.current = onLocationNameChange;
+  }, [onLocationNameChange]);
+
+  useEffect(() => {
+    if (locationName.trim()) return;
+    searchRequestRef.current += 1;
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchState('idle');
+    setSearchError(null);
+  }, [locationName]);
+
+  useEffect(() => {
+    const closeResults = (event: PointerEvent) => {
+      if (!searchRootRef.current?.contains(event.target as Node)) {
+        setSearchState((current) => (
+          current === 'results' || current === 'empty' || current === 'error'
+            ? 'idle'
+            : current
+        ));
+      }
+    };
+    document.addEventListener('pointerdown', closeResults);
+    return () => document.removeEventListener('pointerdown', closeResults);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -113,6 +154,12 @@ export function LocationMap({
         roundCoordinate(nextLatitude),
         roundCoordinate(normalizeLongitude(nextLongitude)),
       );
+      onLocationNameChangeRef.current?.('');
+      searchRequestRef.current += 1;
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchState('idle');
+      setSearchError(null);
     };
 
     const handleMapClick = (event: LeafletMouseEvent) => {
@@ -175,6 +222,71 @@ export function LocationMap({
     });
   };
 
+  const submitSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setSearchState('error');
+      setSearchError('Bitte mindestens zwei Zeichen eingeben.');
+      return;
+    }
+
+    const requestId = searchRequestRef.current + 1;
+    searchRequestRef.current = requestId;
+    setSearchState('loading');
+    setSearchError(null);
+
+    try {
+      const response = await searchLocations(query, 5);
+      if (searchRequestRef.current !== requestId) return;
+      const { results } = response;
+      setSearchAttribution(response.attribution);
+      setSearchResults(results);
+      setSearchState(results.length > 0 ? 'results' : 'empty');
+    } catch (error) {
+      if (searchRequestRef.current !== requestId) return;
+      setSearchResults([]);
+      setSearchState('error');
+      setSearchError(
+        error instanceof ApiError && error.status === 503
+          ? 'Die Adresssuche ist derzeit nicht verfügbar. Koordinaten können weiterhin direkt eingegeben werden.'
+          : error instanceof ApiError && error.status === 502
+            ? 'Der Adressdienst hat ungültig geantwortet. Bitte später erneut versuchen.'
+            : error instanceof ApiError
+              ? error.message
+          : 'Die Adresse konnte nicht gesucht werden.',
+      );
+    }
+  };
+
+  const selectSearchResult = (result: GeocodeResult) => {
+    const nextLatitude = roundCoordinate(result.latitude);
+    const nextLongitude = roundCoordinate(normalizeLongitude(result.longitude));
+    onChangeRef.current(nextLatitude, nextLongitude);
+    onLocationNameChangeRef.current?.(result.shortName);
+    markerRef.current?.setLatLng([nextLatitude, nextLongitude]);
+
+    const map = mapRef.current;
+    if (map) {
+      if (result.boundingBox) {
+        const [south, north, west, east] = result.boundingBox;
+        map.fitBounds([[south, west], [north, east]], {
+          animate: true,
+          padding: [28, 28],
+          maxZoom: 18,
+        });
+      } else {
+        map.flyTo([nextLatitude, nextLongitude], 17, { animate: true, duration: 0.7 });
+      }
+    }
+
+    setSearchQuery(result.displayName);
+    setSearchState('idle');
+    setSearchResults([]);
+    setSearchError(null);
+  };
+
   const useBrowserLocation = () => {
     if (!('geolocation' in navigator)) {
       setLocationError('Die Standortfreigabe wird von diesem Browser nicht unterstützt.');
@@ -188,6 +300,12 @@ export function LocationMap({
         const nextLatitude = roundCoordinate(position.coords.latitude);
         const nextLongitude = roundCoordinate(normalizeLongitude(position.coords.longitude));
         onChangeRef.current(nextLatitude, nextLongitude);
+        onLocationNameChangeRef.current?.('');
+        searchRequestRef.current += 1;
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchState('idle');
+        setSearchError(null);
         mapRef.current?.flyTo([nextLatitude, nextLongitude], 15, {
           animate: true,
           duration: 0.7,
@@ -210,6 +328,77 @@ export function LocationMap({
 
   return (
     <div className={rootClassName}>
+      <div className="location-map__search" ref={searchRootRef}>
+        <form className="location-map__search-form" role="search" onSubmit={submitSearch}>
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => {
+              if (searchState === 'loading') searchRequestRef.current += 1;
+              setSearchQuery(event.target.value);
+              setSearchState('idle');
+              setSearchError(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setSearchState('idle');
+                setSearchResults([]);
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder="Ort, Straße und Hausnummer suchen"
+            aria-label="Adresse oder Ort suchen"
+            aria-controls="location-search-results"
+            aria-expanded={searchState === 'results' || searchState === 'empty'}
+            autoComplete="off"
+          />
+          <button type="submit" disabled={searchState === 'loading'}>
+            {searchState === 'loading' ? <LoaderCircle className="is-spinning" size={15} /> : <Search size={15} />}
+            <span>{searchState === 'loading' ? 'Suche …' : 'Suchen'}</span>
+          </button>
+        </form>
+
+        {(searchState === 'results' || searchState === 'empty') && (
+          <div className="location-map__search-popover" id="location-search-results">
+            {searchState === 'results' ? (
+              <ul aria-label="Gefundene Adressen">
+                {searchResults.map((result) => (
+                  <li key={`${result.id}-${result.latitude}-${result.longitude}`}>
+                    <button type="button" onClick={() => selectSearchResult(result)}>
+                      <MapPin size={16} />
+                      <span>
+                        <strong>{result.shortName}</strong>
+                        <small>{result.displayName}</small>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Keine passende Adresse gefunden. Versuchen Sie Ort, Straße und Hausnummer gemeinsam.</p>
+            )}
+            <a
+              className="location-map__search-attribution"
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Suche: {searchAttribution}
+            </a>
+          </div>
+        )}
+
+        {searchState === 'error' && searchError && (
+          <p className="location-map__search-error" role="alert">{searchError}</p>
+        )}
+        <span className="location-map__sr-only" role="status" aria-live="polite">
+          {searchState === 'loading' && 'Adresse wird gesucht.'}
+          {searchState === 'results' && `${searchResults.length} Suchergebnisse gefunden.`}
+          {searchState === 'empty' && 'Keine Suchergebnisse gefunden.'}
+        </span>
+      </div>
+
       <div className="location-map__toolbar">
         <span><MapPin size={14} /> In die Karte klicken oder den Marker ziehen</span>
         <div className="location-map__actions">

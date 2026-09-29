@@ -268,3 +268,21 @@ class HealthResponse(APIModel):
     service: str
     version: str
 
+
+class GeocodingResult(APIModel):
+    id: str
+    display_name: str
+    short_name: str
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    type: str | None = None
+    bounding_box: tuple[float, float, float, float] | None = Field(
+        default=None,
+        description="South, north, west and east bounds in decimal degrees.",
+    )
+
+
+class GeocodingResponse(APIModel):
+    results: list[GeocodingResult]
+    attribution: str = "© OpenStreetMap contributors (ODbL)"
+

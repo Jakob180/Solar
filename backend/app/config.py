@@ -15,6 +15,10 @@ DEFAULT_CORS_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 )
+DEFAULT_NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
+DEFAULT_NOMINATIM_USER_AGENT = (
+    "SolarPotentialLocal/1.0 (local PV simulator; contact: local operator)"
+)
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 load_dotenv(BACKEND_DIR / ".env", override=False)
 
@@ -26,6 +30,11 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_text(name: str, default: str) -> str:
+    value = os.getenv(name, "").strip()
+    return value or default
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     cache_db: Path
@@ -34,6 +43,12 @@ class Settings:
     archive_url: str
     forecast_url: str
     cors_origins: tuple[str, ...] = DEFAULT_CORS_ORIGINS
+    nominatim_endpoint: str = DEFAULT_NOMINATIM_ENDPOINT
+    nominatim_user_agent: str = DEFAULT_NOMINATIM_USER_AGENT
+    nominatim_timeout_seconds: float = 8.0
+    nominatim_min_interval_seconds: float = 1.05
+    nominatim_cache_ttl_seconds: float = 86_400.0
+    nominatim_cache_max_entries: int = 256
 
 
 def get_settings() -> Settings:
@@ -65,4 +80,22 @@ def get_settings() -> Settings:
             "https://api.open-meteo.com/v1/forecast",
         ),
         cors_origins=configured_origins or DEFAULT_CORS_ORIGINS,
+        nominatim_endpoint=_env_text(
+            "NOMINATIM_ENDPOINT", DEFAULT_NOMINATIM_ENDPOINT
+        ),
+        nominatim_user_agent=_env_text(
+            "NOMINATIM_USER_AGENT", DEFAULT_NOMINATIM_USER_AGENT
+        ),
+        nominatim_timeout_seconds=max(
+            1.0, min(30.0, float(os.getenv("NOMINATIM_TIMEOUT_SECONDS", "8")))
+        ),
+        nominatim_min_interval_seconds=max(
+            0.0, float(os.getenv("NOMINATIM_MIN_INTERVAL_SECONDS", "1.05"))
+        ),
+        nominatim_cache_ttl_seconds=max(
+            60.0, float(os.getenv("NOMINATIM_CACHE_TTL_SECONDS", "86400"))
+        ),
+        nominatim_cache_max_entries=max(
+            1, min(10_000, int(os.getenv("NOMINATIM_CACHE_MAX_ENTRIES", "256")))
+        ),
     )

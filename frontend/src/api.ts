@@ -1,5 +1,7 @@
 import type {
   DataMetadata,
+  GeocodeResult,
+  GeocodeSearchResponse,
   MonthlyPoint,
   RoofResult,
   SimulationRequest,
@@ -258,3 +260,108 @@ export const runNowSimulation = (body: SimulationRequest) => {
   const { simulation: _simulation, ...nowBody } = body;
   return request('/api/now', nowBody);
 };
+
+function normalizeGeocodeResults(payload: unknown): GeocodeResult[] {
+  const outer = record(payload);
+  const rawResults = Array.isArray(payload)
+    ? payload
+    : Array.isArray(outer.results)
+      ? outer.results
+      : [];
+
+  return rawResults
+    .filter(isRecord)
+    .map((item, index) => {
+      const latitude = numberValue(firstDefined(item.latitude, item.lat), Number.NaN);
+      const longitude = numberValue(firstDefined(item.longitude, item.lon), Number.NaN);
+      const rawBounds = firstDefined(item.bounding_box, item.boundingBox, item.boundingbox);
+      const parsedBounds = Array.isArray(rawBounds)
+        ? rawBounds.map((value) => Number(value))
+        : [];
+      const boundingBox = parsedBounds.length === 4 && parsedBounds.every(Number.isFinite)
+        ? parsedBounds as [number, number, number, number]
+        : undefined;
+      const displayName = stringValue(firstDefined(item.display_name, item.displayName, item.label));
+      const shortName = stringValue(
+        firstDefined(item.short_name, item.shortName, item.name),
+        displayName.split(',')[0]?.trim() || 'Gewählter Standort',
+      );
+
+      return {
+        id: stringValue(
+          firstDefined(item.id, item.place_id, item.osm_id),
+          `location-${index}-${latitude}-${longitude}`,
+        ),
+        displayName,
+        shortName,
+        latitude,
+        longitude,
+        type: optionalString(firstDefined(item.type, item.category)),
+        boundingBox,
+      };
+    })
+    .filter((item) => (
+      item.displayName
+      && Number.isFinite(item.latitude)
+      && item.latitude >= -90
+      && item.latitude <= 90
+      && Number.isFinite(item.longitude)
+      && item.longitude >= -180
+      && item.longitude <= 180
+    ));
+}
+
+export async function searchLocations(query: string, limit = 5): Promise<GeocodeSearchResponse> {
+  const normalizedQuery = query.trim();
+  if (normalizedQuery.length < 2) {
+    return { results: [], attribution: '© OpenStreetMap contributors (ODbL)' };
+  }
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12_000);
+  const parameters = new URLSearchParams({
+    q: normalizedQuery,
+    limit: String(Math.min(5, Math.max(1, Math.round(limit)))),
+  });
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/geocode?${parameters.toString()}`, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    const contentType = response.headers.get('content-type') ?? '';
+    const payload: unknown = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
+
+    if (!response.ok) {
+      const detail = isRecord(payload)
+        ? firstDefined(payload.detail, payload.message, payload.error)
+        : payload;
+      const nestedDetail = isRecord(detail)
+        ? firstDefined(detail.message, detail.hint, detail.code)
+        : detail;
+      const message = typeof nestedDetail === 'string'
+        ? nestedDetail
+        : `Die Adresssuche ist fehlgeschlagen (HTTP ${response.status}).`;
+      throw new ApiError(message, response.status);
+    }
+
+    const outer = record(payload);
+    return {
+      results: normalizeGeocodeResults(payload),
+      attribution: stringValue(
+        outer.attribution,
+        '© OpenStreetMap contributors (ODbL)',
+      ),
+    };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiError('Die Adresssuche hat zu lange gedauert. Bitte erneut versuchen.');
+    }
+    throw new ApiError('Die lokale Adresssuche ist momentan nicht erreichbar.');
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}

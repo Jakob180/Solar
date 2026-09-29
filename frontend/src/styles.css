@@ -198,6 +198,22 @@ a {
   justify-self: end;
 }
 
+.house-model-loading {
+  min-height: 320px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  color: var(--ink-soft);
+  border: 1px solid rgba(206, 214, 198, 0.94);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fbfcf5 0%, #e7eddb 100%);
+}
+
+.house-model-loading svg {
+  animation: spin 0.9s linear infinite;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(390px, 430px) minmax(0, 1fr);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -39,7 +39,6 @@ import {
 } from 'recharts';
 import { ApiError, runNowSimulation, runSimulation } from './api';
 import { LocationMap } from './components/LocationMap';
-import { SolarHouse3D } from './components/SolarHouse3D';
 import type {
   LocationConfig,
   PanelConfig,
@@ -48,6 +47,11 @@ import type {
   SimulationRequest,
   SimulationResponse,
 } from './types';
+
+const SolarHouse3D = lazy(async () => {
+  const module = await import('./components/SolarHouse3D');
+  return { default: module.SolarHouse3D };
+});
 
 const numberFormatter = new Intl.NumberFormat('de-AT', {
   minimumFractionDigits: 0,
@@ -426,19 +430,28 @@ function App() {
               Strahlungsdaten – lokal, transparent und ohne versteckte Annahmen.
             </p>
           </div>
-          <SolarHouse3D
-            className="hero-house-model"
-            roofTiltDeg={visualizedRoof?.tiltDeg}
-            roofAzimuthDeg={visualizedRoof?.azimuthDeg}
-            panelCount={visualizedPanels}
-            installedKwp={visualizedKwp}
-            currentPowerKw={visualizedPower}
-            sunElevationDeg={displayedResult?.solar.currentElevationDeg}
-            sunAzimuthDeg={displayedResult?.solar.currentAzimuthDeg}
-            locationName={location.name || 'Gewählter Standort'}
-            loading={loadingMode !== null}
-            hasResult={displayedResult !== null}
-          />
+          <Suspense
+            fallback={(
+              <div className="hero-house-model house-model-loading" role="status">
+                <LoaderCircle size={22} aria-hidden="true" />
+                <span>3D-Modell wird geladen …</span>
+              </div>
+            )}
+          >
+            <SolarHouse3D
+              className="hero-house-model"
+              roofTiltDeg={visualizedRoof?.tiltDeg}
+              roofAzimuthDeg={visualizedRoof?.azimuthDeg}
+              panelCount={visualizedPanels}
+              installedKwp={visualizedKwp}
+              currentPowerKw={visualizedPower}
+              sunElevationDeg={displayedResult?.solar.currentElevationDeg}
+              sunAzimuthDeg={displayedResult?.solar.currentAzimuthDeg}
+              locationName={location.name || 'Gewählter Standort'}
+              loading={loadingMode !== null}
+              hasResult={displayedResult !== null}
+            />
+          </Suspense>
         </section>
 
         <section className="workspace page-width">
@@ -471,8 +484,12 @@ function App() {
                 <LocationMap
                   latitude={location.latitude}
                   longitude={location.longitude}
+                  locationName={location.name}
                   onChange={(latitude, longitude) => {
                     setLocation((current) => ({ ...current, latitude, longitude }));
+                  }}
+                  onLocationNameChange={(name) => {
+                    setLocation((current) => ({ ...current, name }));
                   }}
                 />
                 <div className="two-column-fields">
@@ -482,7 +499,11 @@ function App() {
                       min={-90}
                       max={90}
                       label="Breitengrad"
-                      onValueChange={(latitude) => setLocation((current) => ({ ...current, latitude }))}
+                      onValueChange={(latitude) => setLocation((current) => ({
+                        ...current,
+                        latitude,
+                        name: '',
+                      }))}
                     />
                   </Field>
                   <Field label="Längengrad" suffix="°">
@@ -491,7 +512,11 @@ function App() {
                       min={-180}
                       max={180}
                       label="Längengrad"
-                      onValueChange={(longitude) => setLocation((current) => ({ ...current, longitude }))}
+                      onValueChange={(longitude) => setLocation((current) => ({
+                        ...current,
+                        longitude,
+                        name: '',
+                      }))}
                     />
                   </Field>
                 </div>
@@ -676,7 +701,7 @@ function App() {
       <footer className="footer page-width">
         <div className="brand footer-brand"><span className="brand-mark"><Sun size={17} /></span><span>solara</span></div>
         <p>Lokale PV-Simulation · Ergebnisse sind Modellwerte und ersetzen keine Anlagenplanung.</p>
-        <span>Anlagen- und Ergebnisdaten bleiben lokal · Wetterdaten und Kartenkacheln werden extern geladen.</span>
+        <span>Anlagen- und Ergebnisdaten bleiben lokal · Wetter-, Karten- und explizite Suchanfragen nutzen externe Dienste.</span>
       </footer>
     </div>
   );

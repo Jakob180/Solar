@@ -26,9 +26,19 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              name: 'three',
+              test: /node_modules[\\/]three/,
+              priority: 50,
+            },
+            {
               name: 'recharts',
               test: /node_modules[\\/]recharts/,
               priority: 30,
+            },
+            {
+              name: 'leaflet',
+              test: /node_modules[\\/]leaflet/,
+              priority: 35,
             },
             {
               name: 'chart-utils',

@@ -8,141 +8,53 @@
 .solar-house-3d__viewport {
   position: relative;
   width: 100%;
-  min-height: 280px;
+  height: clamp(320px, 27vw, 390px);
+  min-height: 320px;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid rgba(206, 214, 198, 0.92);
+  border: 1px solid rgba(206, 214, 198, 0.94);
   border-radius: 24px;
-  background: #f2f5e9;
+  background:
+    radial-gradient(circle at 72% 18%, rgba(232, 241, 178, 0.68), transparent 30%),
+    linear-gradient(180deg, #fbfcf5 0%, #eef2e5 62%, #e2e9d6 100%);
   box-shadow: 0 22px 55px rgba(24, 32, 25, 0.13);
 }
 
-.solar-house-3d__scene {
+.solar-house-3d__canvas-host,
+.solar-house-3d__canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
-  min-height: 280px;
+  height: 100%;
 }
 
-.solar-house-3d__sun-path {
-  fill: none;
-  stroke: #aeb79a;
-  stroke-width: 1.2;
-  stroke-opacity: 0.36;
+.solar-house-3d__canvas-host {
+  z-index: 0;
+  cursor: grab;
+  touch-action: none;
 }
 
-.solar-house-3d__sun-path--dash {
-  stroke: #efb326;
-  stroke-dasharray: 3 13;
-  stroke-linecap: round;
-  stroke-opacity: 0.56;
-  animation: solar-house-path-flow 9s linear infinite;
+.solar-house-3d__canvas-host:active {
+  cursor: grabbing;
 }
 
-.solar-house-3d__sun {
-  transform-box: view-box;
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 350ms ease;
-  opacity: var(--house-sun-strength);
+.solar-house-3d__canvas-host:focus-visible {
+  z-index: 1;
+  border-radius: 22px;
+  outline: 3px solid rgba(202, 142, 0, 0.72);
+  outline-offset: -5px;
+  box-shadow: inset 0 0 0 7px rgba(255, 255, 255, 0.52);
 }
 
-.solar-house-3d__sun--night {
-  filter: grayscale(0.45);
-}
-
-.solar-house-3d__sun-rays {
-  fill: none;
-  stroke: #d99b13;
-  stroke-width: 2;
-  stroke-linecap: round;
-  animation: solar-house-sun-spin 18s linear infinite;
-}
-
-.solar-house-3d__cloud {
-  fill: #ffffff;
-  opacity: 0.68;
-  filter: drop-shadow(0 6px 8px rgba(64, 73, 58, 0.08));
-  animation: solar-house-cloud-drift 9s ease-in-out infinite alternate;
-}
-
-.solar-house-3d__cloud--two {
-  opacity: 0.48;
-  animation-duration: 12s;
-  animation-delay: -4s;
-}
-
-.solar-house-3d__energy-rays line {
-  stroke: #efb326;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-dasharray: 2 10;
-  opacity: calc(var(--house-sun-strength) * 0.72);
-  animation: solar-house-energy-flow 1.4s linear infinite;
-}
-
-.solar-house-3d__energy-rays line:nth-child(2) { animation-delay: -0.45s; }
-.solar-house-3d__energy-rays line:nth-child(3) { animation-delay: -0.9s; }
-
-.solar-house-3d__house {
-  transform-origin: 340px 270px;
-  animation: solar-house-float 5.5s ease-in-out infinite;
-}
-
-.solar-house-3d__panels polygon {
-  transition: filter 220ms ease;
-  filter: brightness(calc(0.74 + var(--house-sun-strength) * 0.3));
-}
-
-.solar-house-3d__plant {
-  fill: #789467;
-  stroke: #557448;
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.solar-house-3d__plant circle {
-  stroke: none;
-}
-
-.solar-house-3d__plant--right {
-  fill: #87a373;
-}
-
-.solar-house-3d__compass > circle {
-  fill: rgba(255, 255, 255, 0.82);
-  stroke: rgba(85, 99, 76, 0.22);
-  stroke-width: 1;
-}
-
-.solar-house-3d__compass .solar-house-3d__compass-inner {
-  fill: none;
-  stroke-dasharray: 2 5;
-}
-
-.solar-house-3d__compass text {
-  fill: #596250;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.solar-house-3d__compass-arrow {
-  color: #ca8e00;
-  fill: currentColor;
-  transform: rotate(var(--house-compass-rotation));
-  transform-origin: center;
-  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.solar-house-3d__compass-arrow circle {
-  fill: #fffdf3;
-  stroke: currentColor;
-  stroke-width: 2;
+.solar-house-3d__canvas {
+  outline: none;
 }
 
 .solar-house-3d__topline {
   position: absolute;
-  z-index: 2;
-  inset: 16px 16px auto;
+  z-index: 4;
+  inset: 15px 15px auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -153,20 +65,20 @@
 .solar-house-3d__live,
 .solar-house-3d__location,
 .solar-house-3d__panel-note,
-.solar-house-3d__status {
+.solar-house-3d__status,
+.solar-house-3d__controls-hint {
   display: inline-flex;
   align-items: center;
   min-width: 0;
-  border: 1px solid rgba(209, 217, 201, 0.9);
+  border: 1px solid rgba(209, 217, 201, 0.92);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 8px 24px rgba(24, 32, 25, 0.07);
   color: #53604f;
   font-size: 10px;
   font-weight: 750;
-  letter-spacing: 0.065em;
+  letter-spacing: 0.055em;
   line-height: 1;
-  text-transform: uppercase;
   backdrop-filter: blur(12px);
 }
 
@@ -174,11 +86,13 @@
 .solar-house-3d__location {
   min-height: 28px;
   padding: 7px 10px;
+  text-transform: uppercase;
 }
 
 .solar-house-3d__location {
   overflow: hidden;
   max-width: 44%;
+  margin-right: 78px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -199,17 +113,52 @@
   animation: solar-house-live-pulse 2.3s ease-in-out infinite;
 }
 
+.solar-house-3d__reset {
+  position: absolute;
+  z-index: 6;
+  top: 15px;
+  right: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid rgba(205, 214, 196, 0.96);
+  border-radius: 999px;
+  color: #4c5749;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 7px 20px rgba(24, 32, 25, 0.08);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.solar-house-3d__reset:hover {
+  border-color: #b9c492;
+  color: #8c6500;
+  transform: translateY(-1px);
+}
+
+.solar-house-3d__reset span {
+  font-size: 15px;
+  line-height: 0.8;
+}
+
 .solar-house-3d__metrics {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   inset: auto 14px 14px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
-  border: 1px solid rgba(216, 222, 209, 0.94);
+  border: 1px solid rgba(216, 222, 209, 0.96);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.87);
   box-shadow: 0 13px 32px rgba(24, 32, 25, 0.1);
+  pointer-events: none;
   backdrop-filter: blur(14px);
 }
 
@@ -218,7 +167,7 @@
   min-width: 0;
   gap: 4px;
   padding: 10px 12px;
-  border-right: 1px solid rgba(216, 222, 209, 0.88);
+  border-right: 1px solid rgba(216, 222, 209, 0.9);
 }
 
 .solar-house-3d__metrics > span:last-child {
@@ -239,6 +188,7 @@
 
 .solar-house-3d__metrics strong {
   overflow: hidden;
+  color: #253026;
   font-size: 11px;
   letter-spacing: -0.015em;
   line-height: 1.15;
@@ -251,18 +201,21 @@
 }
 
 .solar-house-3d__panel-note,
-.solar-house-3d__status {
+.solar-house-3d__status,
+.solar-house-3d__controls-hint {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   bottom: 73px;
   min-height: 25px;
   padding: 7px 9px;
-  letter-spacing: 0.035em;
-  text-transform: none;
+  letter-spacing: 0.025em;
+  pointer-events: none;
 }
 
 .solar-house-3d__panel-note {
-  right: 14px;
+  top: 52px;
+  bottom: auto;
+  left: 15px;
 }
 
 .solar-house-3d__status {
@@ -275,8 +228,104 @@
   animation: solar-house-live-pulse 1.55s ease-in-out infinite;
 }
 
-.solar-house-3d--loading .solar-house-3d__scene,
-.solar-house-3d--loading .solar-house-3d__metrics {
+.solar-house-3d__controls-hint {
+  right: 14px;
+  color: #6f786c;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.solar-house-3d__touch-hint {
+  display: none;
+}
+
+.solar-house-3d__fallback {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 52px 36px 92px;
+  color: #455044;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(219, 238, 114, 0.24), transparent 28%),
+    rgba(242, 245, 233, 0.95);
+}
+
+.solar-house-3d__fallback > strong {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.solar-house-3d__fallback > span {
+  max-width: 390px;
+  color: #667065;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.solar-house-3d__fallback > small {
+  color: #788175;
+  font-size: 9px;
+}
+
+.solar-house-3d__fallback-picture {
+  position: relative;
+  width: 116px;
+  height: 76px;
+}
+
+.solar-house-3d__fallback-home {
+  position: absolute;
+  right: 13px;
+  bottom: 3px;
+  width: 76px;
+  height: 42px;
+  border-radius: 3px;
+  background: #dfdccb;
+  box-shadow: 0 9px 18px rgba(24, 32, 25, 0.13);
+  transform: skewY(8deg);
+}
+
+.solar-house-3d__fallback-roof {
+  position: absolute;
+  z-index: 2;
+  right: 7px;
+  bottom: 42px;
+  width: 93px;
+  height: 31px;
+  border-radius: 4px;
+  background: #26392e;
+  transform: skewX(-23deg) rotate(8deg);
+}
+
+.solar-house-3d__fallback-roof b {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 21px;
+  margin: 5px 1px 0 5px;
+  border: 1px solid #8aa6b2;
+  background: #244454;
+}
+
+.solar-house-3d__fallback-sun {
+  position: absolute;
+  top: -4px;
+  left: 1px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #dbee72;
+  box-shadow: 0 0 0 8px rgba(219, 238, 114, 0.18);
+}
+
+.solar-house-3d--loading .solar-house-3d__metrics,
+.solar-house-3d--loading .solar-house-3d__status {
   animation: solar-house-loading 1.25s ease-in-out infinite alternate;
 }
 
@@ -290,16 +339,31 @@
   white-space: nowrap;
 }
 
-@container (max-width: 470px) {
-  .solar-house-3d__viewport,
-  .solar-house-3d__scene {
-    min-height: 250px;
+@container (max-width: 520px) {
+  .solar-house-3d__viewport {
+    height: 340px;
+    min-height: 340px;
   }
 
-  .solar-house-3d__scene {
-    width: 112%;
-    max-width: none;
-    margin-left: -6%;
+  .solar-house-3d__desktop-hint {
+    display: none;
+  }
+
+  .solar-house-3d__touch-hint {
+    display: inline;
+  }
+}
+
+@container (max-width: 430px) {
+  .solar-house-3d__viewport {
+    height: 350px;
+    min-height: 350px;
+    border-radius: 18px;
+  }
+
+  .solar-house-3d__location {
+    max-width: 38%;
+    margin-right: 70px;
   }
 
   .solar-house-3d__metrics {
@@ -311,45 +375,40 @@
   }
 
   .solar-house-3d__metrics > span:nth-child(n + 3) {
-    border-top: 1px solid rgba(216, 222, 209, 0.88);
+    border-top: 1px solid rgba(216, 222, 209, 0.9);
   }
 
-  .solar-house-3d__panel-note {
+  .solar-house-3d__status,
+  .solar-house-3d__controls-hint {
+    bottom: 105px;
+  }
+
+  .solar-house-3d__controls-hint {
     display: none;
   }
 
-  .solar-house-3d__status {
-    bottom: 105px;
+  .solar-house-3d__fallback {
+    padding-inline: 22px;
+    padding-bottom: 122px;
   }
 }
 
-@container (max-width: 330px) {
+@container (max-width: 340px) {
   .solar-house-3d__location,
   .solar-house-3d__status {
     display: none;
   }
-}
 
-@keyframes solar-house-path-flow {
-  to { stroke-dashoffset: -64; }
-}
+  .solar-house-3d__reset {
+    width: 30px;
+    justify-content: center;
+    padding-inline: 0;
+    font-size: 0;
+  }
 
-@keyframes solar-house-sun-spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes solar-house-cloud-drift {
-  from { transform: translateX(-5px); }
-  to { transform: translateX(7px); }
-}
-
-@keyframes solar-house-energy-flow {
-  to { stroke-dashoffset: -24; }
-}
-
-@keyframes solar-house-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2.5px); }
+  .solar-house-3d__reset span {
+    font-size: 15px;
+  }
 }
 
 @keyframes solar-house-live-pulse {
@@ -358,7 +417,7 @@
 }
 
 @keyframes solar-house-loading {
-  from { opacity: 0.6; }
+  from { opacity: 0.62; }
   to { opacity: 1; }
 }
 

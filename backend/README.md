@@ -25,6 +25,8 @@ Interactive OpenAPI documentation is available at
   to 367 days.
 - `POST /api/now`: current expected power; an optional `simulation` object is
   accepted and ignored so clients may reuse the same form payload.
+- `GET /api/geocode?q=...&limit=...`: explicit-submit address/place lookup;
+  `limit` is constrained to 1–5. This route is not an autocomplete endpoint.
 - `GET /api/health`: lightweight process health check.
 
 Azimuth follows the navigation convention: 0° north, 90° east, 180° south,
@@ -70,6 +72,27 @@ Configuration is read from a root `.env` and then `backend/.env`. See
 list and defaults to local ports 3000 and 5173 (both `localhost` and
 `127.0.0.1`).
 
+### Address search
+
+The optional map search uses the public OpenStreetMap Nominatim search API with
+`jsonv2` and address details. Calls are made only after an explicit user submit,
+serialized, limited to at most one provider request per 1.05 seconds, and kept
+in a bounded in-memory cache for 24 hours by default. Identical normalized
+queries therefore do not repeatedly hit the public service. Results include
+the required OpenStreetMap attribution. Provider timeouts/rate limits return a
+clear HTTP 503; invalid upstream responses return HTTP 502, while manual
+latitude/longitude input remains available. `SOLAR_OFFLINE=true` also disables
+geocoding and returns HTTP 503 without attempting a network request.
+
+`NOMINATIM_ENDPOINT` permits switching to another/self-hosted provider without
+a software update. `NOMINATIM_USER_AGENT` must identify the application; any
+productive or public deployment must replace the local default with a real
+application name and contact. Timeout, minimum interval, cache TTL and cache
+size are also configurable in `.env.example`. The public service's usage policy
+and ODbL attribution requirements remain binding. See the official
+[Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)
+and [OpenStreetMap copyright/ODbL information](https://www.openstreetmap.org/copyright).
+
 ## Tests
 
 Tests never require the network:
@@ -80,4 +103,6 @@ python -m pytest backend/tests
 
 They cover validation, panel fitting, latitude and seasonal solar geometry,
 sunrise/sunset, roof directions and tilts, Wp/panel scaling, energy integration,
-fallback and cache behavior, and all public API routes.
+fallback/cache behavior, geocoding policy controls and all public API routes.
+Geocoding tests use `httpx.MockTransport`; the test suite never contacts
+Nominatim.

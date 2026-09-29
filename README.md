@@ -6,8 +6,8 @@ Die Anwendung erkennt **keine** Gebäude und führt **keine** automatische Versc
 
 ## Funktionsumfang
 
-- interaktive OpenStreetMap-Karte mit Kartenklick, verschiebbarem Marker, Browser-Standort und weiterhin direkt editierbaren Koordinaten
-- animierte, schematische 3D-Hausansicht für Dachneigung, Azimut, PV-Module, Sonnenstand und Energiefluss
+- interaktive OpenStreetMap-Karte mit Adresssuche (Ort, Straße und Hausnummer), Kartenklick, verschiebbarem Marker, Browser-Standort und weiterhin direkt editierbaren Koordinaten
+- echtes interaktives WebGL-3D-Haus mit Drehen, Zoomen und Verschieben sowie animierter Darstellung von Dachneigung, Azimut, PV-Modulen, Sonnenstand und Energiefluss
 - automatisch bestimmte Standort-Zeitzone aus den exakten Koordinaten
 - beliebig viele Dachflächen mit Fläche, Neigung, Azimut und PV-Belegung
 - automatische, flächenbasierte Modulanzahl und manueller Override mit Kapazitätsprüfung
@@ -25,22 +25,23 @@ Die Anwendung erkennt **keine** Gebäude und führt **keine** automatische Versc
 ## Architektur und Tech-Stack
 
 ```text
-Browser (React + TypeScript + Vite + Recharts + Leaflet)
+Browser (React + TypeScript + Vite + Recharts + Leaflet + Three.js)
           │                         │
           │                         └── OpenStreetMap-Kartenkacheln
           ▼
 lokale FastAPI-API ──┬── Open-Meteo Historical/Forecast API
+                     ├── OpenStreetMap Nominatim-Adresssuche
                      ├── SQLite-Wettercache
                      └── pvlib / pandas / NumPy
 ```
 
-React/TypeScript sorgt für typisierte, dynamische Formulare, die interaktive Leaflet-Karte, das animierte Hausmodell und ein responsives Dashboard. FastAPI/Pydantic übernimmt die strikte Eingabevalidierung. Die wissenschaftlichen Berechnungen liegen in Python, weil pvlib etablierte Solarpositions-, Transpositions-, Temperatur- und PV-Leistungsmodelle bereitstellt. Berechnung, Dach- und Moduldaten bleiben lokal; Internet wird für Open-Meteo-Daten und die OpenStreetMap-Kartenkacheln verwendet.
+React/TypeScript sorgt für typisierte, dynamische Formulare, die interaktive Leaflet-Karte, die Three.js-Hausszene und ein responsives Dashboard. FastAPI/Pydantic übernimmt die strikte Eingabevalidierung und bündelt die explizit ausgelöste Adresssuche. Die wissenschaftlichen Berechnungen liegen in Python, weil pvlib etablierte Solarpositions-, Transpositions-, Temperatur- und PV-Leistungsmodelle bereitstellt. Berechnung, Dach- und Moduldaten bleiben lokal; Internet wird für Open-Meteo-Daten, OpenStreetMap-Kartenkacheln und die Nominatim-Adresssuche verwendet.
 
 ## Voraussetzungen
 
 - Python 3.11 oder neuer
 - Node.js 20.19 oder neuer (beziehungsweise 22.12+) und npm
-- Internet für reale historische/aktuelle Modelldaten und Kartenkacheln; ohne Internet arbeitet die Berechnung mit dem gekennzeichneten Clear-Sky-Fallback und der Standort bleibt per Koordinaten wählbar
+- Internet für reale historische/aktuelle Modelldaten, Kartenkacheln und Adresssuche; ohne Internet arbeitet die Berechnung mit dem gekennzeichneten Clear-Sky-Fallback und der Standort bleibt per Koordinaten wählbar
 
 Getestete Entwicklungsumgebung: Python 3.11 und Node.js 24 unter Windows.
 
@@ -211,7 +212,7 @@ Open-Meteo liefert historische Strahlung als Mittelwert des vorhergehenden Zeiti
 
 Die zugrunde liegenden offenen Daten erfordern Attribution; Bedingungen und kommerzielle Optionen stehen unter <https://open-meteo.com/en/terms> und <https://open-meteo.com/en/pricing>.
 
-Im Onlinebetrieb werden ausschließlich Koordinaten, Zeitraum, Zeitzone und die angeforderten Wetterfelder an Open-Meteo übertragen. Die Karte lädt Kacheln für den sichtbaren Kartenausschnitt direkt von OpenStreetMap; „Mein Standort“ fragt nur nach einem ausdrücklichen Klick die Browser-Geolokalisierung ab. Dach-, Modul- und Ergebnisdaten verlassen den lokalen Rechner nicht. Mit `SOLAR_OFFLINE=true` werden keine Wetterdaten von Open-Meteo abgerufen; Kartenkacheln bleiben davon unabhängig. Ohne Kartenverbindung funktionieren die direkten Koordinatenfelder weiterhin.
+Im Onlinebetrieb werden ausschließlich Koordinaten, Zeitraum, Zeitzone und die angeforderten Wetterfelder an Open-Meteo übertragen. Die Karte lädt Kacheln für den sichtbaren Kartenausschnitt direkt von OpenStreetMap. Erst beim ausdrücklichen Absenden einer Suche wird der eingegebene Ort, die Straße beziehungsweise Hausnummer über das lokale Backend an OpenStreetMap Nominatim übertragen; Ergebnisse werden dort kurzzeitig zwischengespeichert. „Mein Standort“ fragt nur nach einem ausdrücklichen Klick die Browser-Geolokalisierung ab. Dach-, Modul- und Ergebnisdaten verlassen den lokalen Rechner nicht. Mit `SOLAR_OFFLINE=true` werden weder Wetterdaten noch Adresssuchergebnisse von externen Diensten abgerufen; Kartenkacheln bleiben davon unabhängig. Ohne Kartenverbindung funktionieren die direkten Koordinatenfelder weiterhin.
 
 ### Warum diese Quelle?
 
@@ -277,7 +278,7 @@ Solar/
 - keine Verschattung durch Häuser, Vegetation, Gelände oder Eigenverschattung
 - keine Schnee-, Verschmutzungs-, Degradations- oder Mismatch-Detailmodelle
 - keine geometrische Modulbelegung, Randabstände oder Dachform
-- das 3D-Haus ist eine schematische Visualisierung und kein maßstabgetreues Gebäude- oder Verschattungsmodell
+- das frei dreh-, zoombare und verschiebbare 3D-Haus ist eine schematische Visualisierung und kein maßstabgetreues Gebäude- oder Verschattungsmodell
 - kein konkretes Wechselrichtermodell und kein Clipping
 - kein Batteriespeicher, Eigenverbrauch, Strompreis oder Wirtschaftlichkeit
 - Rasterdaten können lokale Wolken und Mikroklima nicht exakt abbilden
@@ -293,6 +294,7 @@ Die Resultate sind belastbare Modellschätzungen im Rahmen dieser Eingaben und D
 - **Port 5173/8000 belegt:** den anderen Prozess beenden oder Ports in `scripts/dev.mjs` und `frontend/vite.config.ts` konsistent ändern.
 - **API nicht erreichbar/kein Internet:** der Fallback muss in der Ergebnisquelle sichtbar sein; mit `allow_modeled_fallback=false` antwortet die API stattdessen mit HTTP 503.
 - **Karte bleibt leer:** Internetzugang zu `tile.openstreetmap.org` prüfen; Breitengrad und Längengrad können weiterhin direkt eingetragen werden.
+- **Adresssuche liefert nichts:** Internetzugang zu `nominatim.openstreetmap.org` und `SOLAR_OFFLINE=false` prüfen; die Koordinatenfelder und der Kartenmarker funktionieren weiterhin.
 - **Alte Abhängigkeiten:** `npm run setup` erneut ausführen.
 - **Cache zurücksetzen:** Backend beenden und nur die konfigurierte SQLite-Datei unter `backend/data/` entfernen; sie wird beim nächsten Start neu angelegt.
 

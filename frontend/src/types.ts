@@ -6,6 +6,21 @@ export interface LocationConfig {
   longitude: number;
 }
 
+export interface GeocodeResult {
+  id: string;
+  displayName: string;
+  shortName: string;
+  latitude: number;
+  longitude: number;
+  type?: string;
+  boundingBox?: [number, number, number, number];
+}
+
+export interface GeocodeSearchResponse {
+  results: GeocodeResult[];
+  attribution: string;
+}
+
 export interface RoofConfig {
   id: string;
   name: string;
