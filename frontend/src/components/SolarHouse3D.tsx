@@ -493,7 +493,9 @@ function SolarHouse3DComponent({
       scene.fog = new THREE.Fog(0xf2f5e9, 15, 29);
 
       const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
-      camera.position.set(8.7, 6.3, 9.7);
+      // Default south-facing roofs should immediately show their PV-covered
+      // slope instead of requiring the user to rotate the model first.
+      camera.position.set(8.7, 6.3, -9.7);
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 1.35, 0);
@@ -1088,7 +1090,7 @@ function SolarHouse3DComponent({
         {!webglError && (
           <span className="solar-house-3d__controls-hint" aria-hidden="true">
             <span className="solar-house-3d__desktop-hint">Maus: drehen/zoomen · Tastatur: Pfeile, +/−, Shift+Pfeile, Home</span>
-            <span className="solar-house-3d__touch-hint">Ziehen: drehen · Zwei Finger: zoomen</span>
+            <span className="solar-house-3d__touch-hint">Ziehen/Pinch · Tastatur: Pfeile, +/−</span>
           </span>
         )}
       </div>

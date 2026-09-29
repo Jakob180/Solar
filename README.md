@@ -86,21 +86,24 @@ SOLAR_CACHE_PATH=backend/data/solar_cache.sqlite3
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 SOLAR_OFFLINE=false
 SOLAR_HTTP_TIMEOUT=20
+NOMINATIM_ENDPOINT=https://nominatim.openstreetmap.org/search
+NOMINATIM_USER_AGENT=SolarPotentialLocal/1.0 (local PV simulator; contact: local operator)
 ```
 
 Alternativ wird `SOLAR_CACHE_DB` akzeptiert. Open-Meteo benötigt für die standardmäßig verwendete öffentliche, nicht-kommerzielle API keinen Schlüssel. Zugangsdaten dürfen bei einer späteren kommerziellen Provider-Anbindung nur in einer lokalen `.env` liegen und gehören nicht ins Repository.
 
-`SOLAR_OFFLINE=true` unterbindet Netzabfragen. Ergebnisse verwenden dann den deutlich markierten Clear-Sky-Fallback. Der Cache liegt standardmäßig unter `backend/data/weather_cache.sqlite3`.
+Bei einer geteilten oder veröffentlichten Installation muss `NOMINATIM_USER_AGENT` die echte Anwendung und eine Kontaktmöglichkeit nennen. `SOLAR_OFFLINE=true` unterbindet die Backend-Netzabfragen für Wetter und Adresssuche. Ergebnisse verwenden dann den deutlich markierten Clear-Sky-Fallback; direkt vom Browser geladene Kartenkacheln sind davon unabhängig. Der Cache liegt standardmäßig unter `backend/data/weather_cache.sqlite3`.
 
 ## Bedienung
 
-1. Breitengrad und Längengrad eingeben.
+1. Standort über Ort, Straße und Hausnummer suchen, auf der Karte anklicken, den Marker ziehen oder Breitengrad und Längengrad direkt eingeben.
 2. Simulationszeitraum und die lokale Referenzuhrzeit für den angezeigten Sonnenstand wählen (Tag, letzte 30 Tage, laufendes Jahr oder eigene Daten).
 3. Eine oder mehrere Dachflächen anlegen. Die interne Azimutkonvention ist `0° = Nord`, `90° = Ost`, `180° = Süd`, `270° = West`.
-4. PV-Belegung festlegen. „Automatisch“ verwendet das theoretische Flächenmaximum; „Manuell“ erlaubt kleinere Werte.
-5. Moduldaten und pauschale Systemverluste konfigurieren.
-6. „Simulation starten“ oder „Jetzt berechnen“ wählen.
-7. Datenquelle, Auflösung, Qualität, Zeitraum und mögliche Fallback-Hinweise im Ergebnis prüfen.
+4. Das Hausmodell mit Ziehen drehen, per Mausrad beziehungsweise Zwei-Finger-Geste zoomen und mit Rechtsziehen verschieben. Per Tastatur funktionieren Pfeile, `+`/`-`, `Umschalt` + Pfeile und `Pos1`.
+5. PV-Belegung festlegen. „Automatisch“ verwendet das theoretische Flächenmaximum; „Manuell“ erlaubt kleinere Werte.
+6. Moduldaten und pauschale Systemverluste konfigurieren.
+7. „Simulation starten“ oder „Jetzt berechnen“ wählen.
+8. Datenquelle, Auflösung, Qualität, Zeitraum und mögliche Fallback-Hinweise im Ergebnis prüfen.
 
 Die flächenbasierte Modulzahl ist keine Verlegeplanung: Dachform, Randabstände, Wartungsgänge und Hoch-/Querformat sind ohne Dachabmessungen nicht bestimmbar.
 
