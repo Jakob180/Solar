@@ -1,0 +1,12 @@
+fastapi>=0.104,<1
+uvicorn[standard]>=0.24,<1
+pydantic>=2.4,<3
+pvlib>=0.10.4,<1
+pandas>=2.0,<3
+numpy>=1.24,<3
+httpx>=0.25,<1
+# 6.0.1 is the latest pure-Python wheel that installs on stock Windows without
+# a local MSVC compiler; h3 v3 is its compatible API.
+timezonefinder==6.0.1
+h3>=3.7.3,<4
+python-dotenv>=1.0,<2

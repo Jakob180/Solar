@@ -1,0 +1,374 @@
+.solar-house-3d {
+  width: 100%;
+  margin: 0;
+  color: var(--ink, #182019);
+  container-type: inline-size;
+}
+
+.solar-house-3d__viewport {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(206, 214, 198, 0.92);
+  border-radius: 24px;
+  background: #f2f5e9;
+  box-shadow: 0 22px 55px rgba(24, 32, 25, 0.13);
+}
+
+.solar-house-3d__scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 280px;
+}
+
+.solar-house-3d__sun-path {
+  fill: none;
+  stroke: #aeb79a;
+  stroke-width: 1.2;
+  stroke-opacity: 0.36;
+}
+
+.solar-house-3d__sun-path--dash {
+  stroke: #efb326;
+  stroke-dasharray: 3 13;
+  stroke-linecap: round;
+  stroke-opacity: 0.56;
+  animation: solar-house-path-flow 9s linear infinite;
+}
+
+.solar-house-3d__sun {
+  transform-box: view-box;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 350ms ease;
+  opacity: var(--house-sun-strength);
+}
+
+.solar-house-3d__sun--night {
+  filter: grayscale(0.45);
+}
+
+.solar-house-3d__sun-rays {
+  fill: none;
+  stroke: #d99b13;
+  stroke-width: 2;
+  stroke-linecap: round;
+  animation: solar-house-sun-spin 18s linear infinite;
+}
+
+.solar-house-3d__cloud {
+  fill: #ffffff;
+  opacity: 0.68;
+  filter: drop-shadow(0 6px 8px rgba(64, 73, 58, 0.08));
+  animation: solar-house-cloud-drift 9s ease-in-out infinite alternate;
+}
+
+.solar-house-3d__cloud--two {
+  opacity: 0.48;
+  animation-duration: 12s;
+  animation-delay: -4s;
+}
+
+.solar-house-3d__energy-rays line {
+  stroke: #efb326;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 2 10;
+  opacity: calc(var(--house-sun-strength) * 0.72);
+  animation: solar-house-energy-flow 1.4s linear infinite;
+}
+
+.solar-house-3d__energy-rays line:nth-child(2) { animation-delay: -0.45s; }
+.solar-house-3d__energy-rays line:nth-child(3) { animation-delay: -0.9s; }
+
+.solar-house-3d__house {
+  transform-origin: 340px 270px;
+  animation: solar-house-float 5.5s ease-in-out infinite;
+}
+
+.solar-house-3d__panels polygon {
+  transition: filter 220ms ease;
+  filter: brightness(calc(0.74 + var(--house-sun-strength) * 0.3));
+}
+
+.solar-house-3d__plant {
+  fill: #789467;
+  stroke: #557448;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.solar-house-3d__plant circle {
+  stroke: none;
+}
+
+.solar-house-3d__plant--right {
+  fill: #87a373;
+}
+
+.solar-house-3d__compass > circle {
+  fill: rgba(255, 255, 255, 0.82);
+  stroke: rgba(85, 99, 76, 0.22);
+  stroke-width: 1;
+}
+
+.solar-house-3d__compass .solar-house-3d__compass-inner {
+  fill: none;
+  stroke-dasharray: 2 5;
+}
+
+.solar-house-3d__compass text {
+  fill: #596250;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.solar-house-3d__compass-arrow {
+  color: #ca8e00;
+  fill: currentColor;
+  transform: rotate(var(--house-compass-rotation));
+  transform-origin: center;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.solar-house-3d__compass-arrow circle {
+  fill: #fffdf3;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.solar-house-3d__topline {
+  position: absolute;
+  z-index: 2;
+  inset: 16px 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.solar-house-3d__live,
+.solar-house-3d__location,
+.solar-house-3d__panel-note,
+.solar-house-3d__status {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(209, 217, 201, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 8px 24px rgba(24, 32, 25, 0.07);
+  color: #53604f;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.065em;
+  line-height: 1;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+
+.solar-house-3d__live,
+.solar-house-3d__location {
+  min-height: 28px;
+  padding: 7px 10px;
+}
+
+.solar-house-3d__location {
+  overflow: hidden;
+  max-width: 44%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solar-house-3d__live i,
+.solar-house-3d__status i {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #7b8576;
+}
+
+.solar-house-3d__live i {
+  background: #71a566;
+  box-shadow: 0 0 0 4px rgba(113, 165, 102, 0.13);
+  animation: solar-house-live-pulse 2.3s ease-in-out infinite;
+}
+
+.solar-house-3d__metrics {
+  position: absolute;
+  z-index: 3;
+  inset: auto 14px 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(216, 222, 209, 0.94);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 13px 32px rgba(24, 32, 25, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.solar-house-3d__metrics > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 10px 12px;
+  border-right: 1px solid rgba(216, 222, 209, 0.88);
+}
+
+.solar-house-3d__metrics > span:last-child {
+  border-right: 0;
+}
+
+.solar-house-3d__metrics small {
+  overflow: hidden;
+  color: #7b8476;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.solar-house-3d__metrics strong {
+  overflow: hidden;
+  font-size: 11px;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solar-house-3d__metrics .solar-house-3d__power strong {
+  color: #986b00;
+}
+
+.solar-house-3d__panel-note,
+.solar-house-3d__status {
+  position: absolute;
+  z-index: 2;
+  bottom: 73px;
+  min-height: 25px;
+  padding: 7px 9px;
+  letter-spacing: 0.035em;
+  text-transform: none;
+}
+
+.solar-house-3d__panel-note {
+  right: 14px;
+}
+
+.solar-house-3d__status {
+  left: 14px;
+}
+
+.solar-house-3d__status i.is-active {
+  background: #d49b18;
+  box-shadow: 0 0 0 4px rgba(212, 155, 24, 0.14);
+  animation: solar-house-live-pulse 1.55s ease-in-out infinite;
+}
+
+.solar-house-3d--loading .solar-house-3d__scene,
+.solar-house-3d--loading .solar-house-3d__metrics {
+  animation: solar-house-loading 1.25s ease-in-out infinite alternate;
+}
+
+.solar-house-3d__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container (max-width: 470px) {
+  .solar-house-3d__viewport,
+  .solar-house-3d__scene {
+    min-height: 250px;
+  }
+
+  .solar-house-3d__scene {
+    width: 112%;
+    max-width: none;
+    margin-left: -6%;
+  }
+
+  .solar-house-3d__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .solar-house-3d__metrics > span:nth-child(2) {
+    border-right: 0;
+  }
+
+  .solar-house-3d__metrics > span:nth-child(n + 3) {
+    border-top: 1px solid rgba(216, 222, 209, 0.88);
+  }
+
+  .solar-house-3d__panel-note {
+    display: none;
+  }
+
+  .solar-house-3d__status {
+    bottom: 105px;
+  }
+}
+
+@container (max-width: 330px) {
+  .solar-house-3d__location,
+  .solar-house-3d__status {
+    display: none;
+  }
+}
+
+@keyframes solar-house-path-flow {
+  to { stroke-dashoffset: -64; }
+}
+
+@keyframes solar-house-sun-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes solar-house-cloud-drift {
+  from { transform: translateX(-5px); }
+  to { transform: translateX(7px); }
+}
+
+@keyframes solar-house-energy-flow {
+  to { stroke-dashoffset: -24; }
+}
+
+@keyframes solar-house-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+
+@keyframes solar-house-live-pulse {
+  0%, 100% { opacity: 0.66; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes solar-house-loading {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solar-house-3d *,
+  .solar-house-3d *::before,
+  .solar-house-3d *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

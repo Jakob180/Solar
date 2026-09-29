@@ -1,0 +1,11 @@
+{
+  "name": "solar-potential-local",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "start": "npm --prefix frontend run build && node scripts/dev.mjs --preview",
+    "test": "node scripts/test.mjs"
+  }
+}
+
